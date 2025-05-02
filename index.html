@@ -1,47 +1,44 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>Clasificador con Teachable Machine</title>
-  <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@0.8/dist/teachablemachine-image.min.js"></script>
-  <style>
-    body { font-family: sans-serif; text-align: center; margin: 30px; }
-    video { border: 1px solid #ccc; border-radius: 8px; }
-    #label-container div { margin-top: 8px; font-weight: bold; }
-  </style>
 </head>
 <body>
   <h1>Clasificador con Teachable Machine</h1>
   <button onclick="init()">Iniciar cámara y modelo</button>
-  <div><video id="webcam" autoplay playsinline width="300" height="225"></video></div>
+  <div><canvas id="canvas"></canvas></div>
   <div id="label-container"></div>
 
+  <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@0.8/dist/teachablemachine-image.min.js"></script>
   <script type="text/javascript">
+    const URL = "tm-my-image-model/";
     let model, webcam, labelContainer, maxPredictions;
 
     async function init() {
-      const modelURL = "tm-my-image-model/model.json";
-      const metadataURL = "tm-my-image-model/metadata.json";
+      const modelURL = URL + "model.json";
+      const metadataURL = URL + "metadata.json";
 
+      // Cargar el modelo y metadatos
       model = await tmImage.load(modelURL, metadataURL);
       maxPredictions = model.getTotalClasses();
 
-      const flip = true; 
-      webcam = new tmImage.Webcam(300, 225, flip); 
-      await webcam.setup(); 
+      // Configurar la webcam
+      const flip = true;
+      webcam = new tmImage.Webcam(200, 200, flip);
+      await webcam.setup(); // solicitar acceso a la cámara
       await webcam.play();
       window.requestAnimationFrame(loop);
 
-      document.getElementById("webcam").replaceWith(webcam.canvas);
+      document.getElementById("canvas").appendChild(webcam.canvas);
       labelContainer = document.getElementById("label-container");
-      labelContainer.innerHTML = "";
       for (let i = 0; i < maxPredictions; i++) {
         labelContainer.appendChild(document.createElement("div"));
       }
     }
 
     async function loop() {
-      webcam.update(); 
+      webcam.update();
       await predict();
       window.requestAnimationFrame(loop);
     }
@@ -49,7 +46,8 @@
     async function predict() {
       const prediction = await model.predict(webcam.canvas);
       for (let i = 0; i < maxPredictions; i++) {
-        const classPrediction = prediction[i].className + ": " + (prediction[i].probability * 100).toFixed(2) + "%";
+        const classPrediction =
+          prediction[i].className + ": " + prediction[i].probability.toFixed(2);
         labelContainer.childNodes[i].innerHTML = classPrediction;
       }
     }
